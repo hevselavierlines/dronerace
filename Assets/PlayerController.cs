@@ -80,14 +80,23 @@ public class PlayerController : MonoBehaviour {
 
 	};
 
+	[System.Serializable]
+	public class Stabilisation 
+	{
+		public bool pitch;
+		public bool yaw;
+		public bool rotate;
+		public bool throttle;
+		public Vector3 lastPos;
+	}
+
 	//Variables y instancias de clases
 	public bool UseHelicopter;// Control Enabled For the helicopter ??
 	public HelicopterParts Parts;
 	public AudioH HelicopterSound;
 	public HelicopterSettings Settings;
 	public HC Control;
-
-
+	private Stabilisation stabilisation;
 
 
 	//obtenemos todo el input necesairo
@@ -100,39 +109,76 @@ public class PlayerController : MonoBehaviour {
 			//throttle 
 			if (Input.GetKey (KeyCode.W)) {
 				c.Pitch += 1 * Time.deltaTime;
+				stabilisation.pitch = false;
 			} else if (Input.GetKey (KeyCode.S)) {
 				c.Pitch -= 1 * Time.deltaTime;
+				stabilisation.pitch = false;
+			} else {
+				stabilisation.pitch = true;
 			}
 			//pitch roll yaw control
 			//YAW
-			if (Input.GetKey (KeyCode.D))
+			if (Input.GetKey (KeyCode.D)) {
 				c.Yaw -= 1 * Time.deltaTime;
-			else if (Input.GetKey (KeyCode.A))
+				stabilisation.yaw = false;
+			} else if (Input.GetKey (KeyCode.A)) {
 				c.Yaw += 1 * Time.deltaTime;
-			else
+				stabilisation.yaw = false;
+			} else {
 				c.Yaw = Mathf.Lerp (c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
+				stabilisation.yaw = true;
+			}
 			//Pitch
 			if (Input.GetKey (KeyCode.UpArrow)) {
 				c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
+				stabilisation.throttle = false;
 			} else if (Input.GetKey (KeyCode.DownArrow)) {
 				c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
+				stabilisation.throttle = false;
 			} else { 
-				c.Pitch = Mathf.Lerp(c.Pitch, 0, c.ReturnSpeed*Time.deltaTime);
+				c.Pitch = Mathf.Lerp (c.Pitch, 0, c.ReturnSpeed * Time.deltaTime);
+				stabilisation.throttle = true;
 			}
 				//Roll
-			if (Input.GetKey(KeyCode.RightArrow))
+			if (Input.GetKey (KeyCode.RightArrow)) {
 				c.Roll += 1 * Time.deltaTime; 
-			else if (Input.GetKey(KeyCode.LeftArrow))
+			} else if (Input.GetKey (KeyCode.LeftArrow)) {
 				c.Roll -= 1 * Time.deltaTime;
-			else 
-				c.Roll = Mathf.Lerp(c.Roll, 0, c.ReturnSpeed * Time.deltaTime);
-
-			if (c.ClampValues) 
-			{
-				c.Roll = Mathf.Clamp(c.Roll, -1, 1);
-				c.Pitch = Mathf.Clamp(c.Pitch, -1, 1);
-				c.Yaw = Mathf.Clamp(c.Yaw, -1, 1);
+			} else {
+				c.Roll = Mathf.Lerp (c.Roll, 0, c.ReturnSpeed * Time.deltaTime);
 			}
+			if (c.ClampValues) {
+				c.Roll = Mathf.Clamp (c.Roll, -1, 1);
+				c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
+				c.Yaw = Mathf.Clamp (c.Yaw, -1, 1);
+			}
+			if (stabilisation.lastPos != null) {
+				if (stabilisation.throttle) {
+					float difference = transform.position.y - stabilisation.lastPos.y;
+					if (difference < 0) {
+						c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
+					} else if (difference > 0) {
+						c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
+					}
+				}
+				if (stabilisation.pitch) {
+					float difference = transform.position.z - stabilisation.lastPos.z;
+					if (difference < 0) {
+						c.Pitch += Mathf.Abs(difference) * 100.0f * Time.deltaTime;
+					} else if (difference > 0) {
+						c.Pitch -= Mathf.Abs(difference) * 100.0f * Time.deltaTime;
+					}
+				}
+				if (stabilisation.yaw) {
+					float difference = transform.position.x - stabilisation.lastPos.x;
+					if (difference < 0) {
+						c.Yaw -= Mathf.Abs (difference) * 100.0f * Time.deltaTime;
+					} else if (difference > 0) {
+						c.Yaw += Mathf.Abs (difference) * 100.0f * Time.deltaTime;	
+					}
+				}
+			}
+			stabilisation.lastPos = transform.position;
 			break;
 
 			//JoyStickControl pitch (vertical joystick axe), roll (horizontal axe),  buttons 4 and 5 for yaw, LOGITECH ATTACK 3
@@ -202,8 +248,8 @@ public class PlayerController : MonoBehaviour {
 			Parts.MainRotor.transform.Rotate(Parts.RotationAxisMainRotor,Mathf.Lerp(0,HP,0.36f*Time.deltaTime));//Rotation
 			Parts.TailRotor.transform.Rotate(Parts.RotationAxisMainRotor,Mathf.Lerp(0,HP,0.36f*Time.deltaTime));
 			//damos la fuerza principal del helicoptero 
-			Parts.Chasis.GetComponent<Rigidbody>().AddRelativeForce(Settings.MainForceDir* HP);
-
+			//Parts.Chasis.GetComponent<Rigidbody>().AddRelativeForce(Settings.MainForceDir* HP);
+			Parts.Chasis.GetComponent<Rigidbody> ().AddRelativeForce (Settings.MainForceDir * HP);
 
 			//Main Sound
 			/*if (!HelicopterSound.AudioPoint.isPlaying) 
@@ -214,9 +260,9 @@ public class PlayerController : MonoBehaviour {
 			*/
 
 			//Asignamos la funcionalidad del rotor primario solamente si la potencia es del 20%
-			if(RotationPower > 0.2f)
-				Parts.Chasis.transform.Rotate(new Vector3( (Control.Pitch*RotationPower)*Settings.PitchForce, (Control.Roll*RotationPower)*Settings.RollForce, 0));
-
+			if (RotationPower > 0.2f) {
+				Parts.Chasis.transform.Rotate (new Vector3 ((Control.Pitch * RotationPower) * Settings.PitchForce, (Control.Roll * RotationPower) * Settings.RollForce, 0));
+			}
 		}
 		//else //decuple part 
 		//{
@@ -249,6 +295,7 @@ public class PlayerController : MonoBehaviour {
 	{
 		//Set the center of mass
 		Parts.Chasis.GetComponent<Rigidbody>().centerOfMass = Settings.CenterOfMass.localPosition;
+		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
 	}
 	void FixedUpdate() 
