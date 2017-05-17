@@ -1,7 +1,7 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2008
-
-Project("{55BD0966-806A-02FA-0BFF-A268B5D53E4A}") = "DroneRace", "Assembly-CSharp.csproj", "{A4BC5323-F0A2-5F01-40C8-93FB0D04B411}"
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DroneRace", "Assembly-CSharp.csproj", "{A4BC5323-F0A2-5F01-40C8-93FB0D04B411}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
