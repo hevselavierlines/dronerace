@@ -33,6 +33,7 @@ public class PlayerController : MonoBehaviour {
 		//Chasis and others
 		//public float ChasisDamage;
 		public GameObject Chasis;
+		public GameObject paDrone;
 	}
 	[System.Serializable]
 	public class HelicopterSettings
@@ -98,7 +99,6 @@ public class PlayerController : MonoBehaviour {
 	public HC Control;
 	private Stabilisation stabilisation;
 
-
 	//obtenemos todo el input necesairo
 	void InputControl(HC c) 
 	{
@@ -152,9 +152,14 @@ public class PlayerController : MonoBehaviour {
 				c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
 				c.Yaw = Mathf.Clamp (c.Yaw, -1, 1);
 			}
+			Vector3 localForward = transform.position;
 			if (stabilisation.lastPos != null) {
+				Vector3 driftingDirection = transform.position - stabilisation.lastPos;
+				Vector3 forwardDrifting = driftingDirection - transform.forward;
+				Vector3 sideDrifting = driftingDirection - transform.right;
+
 				if (stabilisation.throttle) {
-					float difference = transform.position.y - stabilisation.lastPos.y;
+					float difference = (localForward.y - stabilisation.lastPos.y);
 					if (difference < 0) {
 						c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
 					} else if (difference > 0) {
@@ -162,23 +167,25 @@ public class PlayerController : MonoBehaviour {
 					}
 				}
 				if (stabilisation.pitch) {
-					float difference = transform.position.z - stabilisation.lastPos.z;
+					Vector3 forward = transform.forward;
+					float difference = forwardDrifting.y;
 					if (difference < 0) {
-						c.Pitch += Mathf.Abs(difference) * 100.0f * Time.deltaTime;
+						c.Pitch += Mathf.Abs(difference) * 10.0f * Time.deltaTime;
 					} else if (difference > 0) {
-						c.Pitch -= Mathf.Abs(difference) * 100.0f * Time.deltaTime;
+						c.Pitch -= Mathf.Abs(difference) * 10.0f * Time.deltaTime;
 					}
 				}
+
 				if (stabilisation.yaw) {
-					float difference = transform.position.x - stabilisation.lastPos.x;
+					float difference = sideDrifting.y;
 					if (difference < 0) {
-						c.Yaw -= Mathf.Abs (difference) * 100.0f * Time.deltaTime;
+						c.Yaw -= Mathf.Abs (difference) * 10.0f * Time.deltaTime;
 					} else if (difference > 0) {
-						c.Yaw += Mathf.Abs (difference) * 100.0f * Time.deltaTime;	
+						c.Yaw += Mathf.Abs (difference) * 10.0f * Time.deltaTime;	
 					}
 				}
 			}
-			stabilisation.lastPos = transform.position;
+			stabilisation.lastPos = localForward;
 			break;
 
 			//JoyStickControl pitch (vertical joystick axe), roll (horizontal axe),  buttons 4 and 5 for yaw, LOGITECH ATTACK 3

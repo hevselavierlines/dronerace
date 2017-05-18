@@ -109,7 +109,7 @@ MonoBehaviour:
   m_MinSize: {x: 683, y: 345}
   m_MaxSize: {x: 12008, y: 8045}
   vertical: 0
-  controlID: 1204
+  controlID: 7160
 --- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -133,7 +133,7 @@ MonoBehaviour:
   m_MinSize: {x: 406, y: 345}
   m_MaxSize: {x: 8006, y: 8045}
   vertical: 1
-  controlID: 1205
+  controlID: 7161
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -157,7 +157,7 @@ MonoBehaviour:
   m_MinSize: {x: 406, y: 224}
   m_MaxSize: {x: 8006, y: 4024}
   vertical: 0
-  controlID: 1206
+  controlID: 7162
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -448,9 +448,9 @@ MonoBehaviour:
       speed: 2
       m_Value: 0
   m_Rotation:
-    m_Target: {x: 0, y: -0.7071068, z: -0, w: 0.7071068}
+    m_Target: {x: 0.24064903, y: -0.45145386, z: 0.12786473, w: 0.84966385}
     speed: 2
-    m_Value: {x: -0, y: 0.7071068, z: 0, w: -0.7071068}
+    m_Value: {x: -0.24064903, y: 0.45145383, z: -0.12786473, w: -0.8496638}
   m_Size:
     m_Target: 5.395753
     speed: 2
