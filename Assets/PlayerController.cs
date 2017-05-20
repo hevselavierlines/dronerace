@@ -30,6 +30,9 @@ public class PlayerController : MonoBehaviour {
 		//Tail
 		public Vector3 RotationAxisTailRotor;
 		public GameObject TailRotor;
+
+		public GameObject leftWing;
+		public GameObject rightWing;
 		//Chasis and others
 		//public float ChasisDamage;
 		public GameObject Chasis;
@@ -296,6 +299,8 @@ public class PlayerController : MonoBehaviour {
 			Parts.Chasis.GetComponent<Rigidbody>().AddTorque(0, HP / .30f * Time.deltaTime, 0);
 		}*/
 		//Debug.Log (Parts.Chasis.GetComponent<Rigidbody> ().velocity.magnitude);
+		Parts.leftWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.Yaw * 10.0f);
+		Parts.rightWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.Yaw * 10.0f);
 	}
 	//Outpouts methods 
 	void Start() 
