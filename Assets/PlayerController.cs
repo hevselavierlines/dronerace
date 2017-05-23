@@ -51,6 +51,7 @@ public class PlayerController : MonoBehaviour {
 		public float YawForce;
 		//RigidBody Settings
 		public Transform CenterOfMass;
+		public float maxAngle;
 	}
 	//Enum :v
 	public enum CT { Keyboard,JoyStick,KeyBoardAndMouse};
@@ -59,14 +60,12 @@ public class PlayerController : MonoBehaviour {
 	public class HC  
 	{
 		public CT ControlType=CT.Keyboard;
-		//------------Inputs------------//
-		//Control options
+		// Control options
 		public float Throttle;// Force Multiplier
-		//Movement
+		// Movement
 		public float Roll;
 		public float Pitch;
 		public float Yaw;
-		//Por el momento  me interesa que esten ocultas c: 
 		[HideInInspector]
 		public float ReturnSpeed=1;
 		[HideInInspector]
@@ -95,7 +94,7 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	//Variables y instancias de clases
-	public bool UseHelicopter;// Control Enabled For the helicopter ??
+	public bool engineOn;// Control Enabled For the helicopter ??
 	public HelicopterParts Parts;
 	public AudioH HelicopterSound;
 	public HelicopterSettings Settings;
@@ -111,10 +110,14 @@ public class PlayerController : MonoBehaviour {
 			// W AND S FOR THROTTLE, A & D FOR YAW , ARROWS FOR PITCH(up, down) and ROLL(right,left) 
 			//throttle 
 			if (Input.GetKey (KeyCode.W)) {
-				c.Pitch += 1 * Time.deltaTime;
+				if (transform.rotation.x < Settings.maxAngle) { 
+					c.Pitch += 1 * Time.deltaTime;
+				}
 				stabilisation.pitch = false;
 			} else if (Input.GetKey (KeyCode.S)) {
-				c.Pitch -= 1 * Time.deltaTime;
+				if (transform.rotation.x > -Settings.maxAngle) {
+					c.Pitch -= 1 * Time.deltaTime;
+				}
 				stabilisation.pitch = false;
 			} else {
 				stabilisation.pitch = true;
@@ -122,10 +125,18 @@ public class PlayerController : MonoBehaviour {
 			//pitch roll yaw control
 			//YAW
 			if (Input.GetKey (KeyCode.D)) {
-				c.Yaw -= 1 * Time.deltaTime;
+				if (transform.rotation.z > -Settings.maxAngle) {
+					c.Yaw -= 1 * Time.deltaTime;
+				} else {
+					c.Yaw = 0;
+				}
 				stabilisation.yaw = false;
 			} else if (Input.GetKey (KeyCode.A)) {
-				c.Yaw += 1 * Time.deltaTime;
+				if (transform.rotation.z < Settings.maxAngle) {
+					c.Yaw += 1 * Time.deltaTime;
+				} else {
+					c.Yaw = 0;
+				}
 				stabilisation.yaw = false;
 			} else {
 				c.Yaw = Mathf.Lerp (c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
@@ -155,87 +166,44 @@ public class PlayerController : MonoBehaviour {
 				c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
 				c.Yaw = Mathf.Clamp (c.Yaw, -1, 1);
 			}
-			Vector3 localForward = transform.position;
-			if (stabilisation.lastPos != null) {
-				Vector3 driftingDirection = transform.position - stabilisation.lastPos;
-				Vector3 forwardDrifting = driftingDirection - transform.forward;
-				Vector3 sideDrifting = driftingDirection - transform.right;
 
-				if (stabilisation.throttle) {
-					float difference = (localForward.y - stabilisation.lastPos.y);
-					if (difference < 0) {
-						c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
-					} else if (difference > 0) {
-						c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
-					}
-				}
-				if (stabilisation.pitch) {
-					Vector3 forward = transform.forward;
-					float difference = forwardDrifting.y;
-					if (difference < 0) {
-						c.Pitch += Mathf.Abs(difference) * 10.0f * Time.deltaTime;
-					} else if (difference > 0) {
-						c.Pitch -= Mathf.Abs(difference) * 10.0f * Time.deltaTime;
-					}
-				}
 
-				if (stabilisation.yaw) {
-					float difference = sideDrifting.y;
-					if (difference < 0) {
-						c.Yaw -= Mathf.Abs (difference) * 10.0f * Time.deltaTime;
-					} else if (difference > 0) {
-						c.Yaw += Mathf.Abs (difference) * 10.0f * Time.deltaTime;	
-					}
+
+			Vector3 driftingDirection = transform.position - stabilisation.lastPos;
+			Vector3 forwardDrifting = driftingDirection - transform.forward;
+			Vector3 sideDrifting = driftingDirection - transform.right;
+
+			if (stabilisation.throttle) {
+				float difference = (transform.position.y - stabilisation.lastPos.y);
+				if (difference < 0) {
+					c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
+				} else if (difference > 0) {
+					c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
 				}
 			}
-			stabilisation.lastPos = localForward;
+			if (stabilisation.pitch) {
+				Vector3 forward = transform.forward;
+				float difference = forwardDrifting.y;
+				if (difference < 0) {
+					c.Pitch += Mathf.Abs(difference) * 10.0f * Time.deltaTime;
+				} else if (difference > 0) {
+					c.Pitch -= Mathf.Abs(difference) * 10.0f * Time.deltaTime;
+				}
+			}
+
+			if (stabilisation.yaw) {
+				float difference = sideDrifting.y;
+				if (difference < 0) {
+					c.Yaw -= Mathf.Abs (difference) * 10.0f * Time.deltaTime;
+				} else if (difference > 0) {
+					c.Yaw += Mathf.Abs (difference) * 10.0f * Time.deltaTime;	
+				}
+			}
+			stabilisation.lastPos = transform.position;
 			break;
-
-			//JoyStickControl pitch (vertical joystick axe), roll (horizontal axe),  buttons 4 and 5 for yaw, LOGITECH ATTACK 3
-		case CT.JoyStick:
-
-			//Axes
-			c.Pitch = Input.GetAxis("Vertical");
-			c.Roll = Input.GetAxis("Horizontal");
-
-
-
-			//Buttons
-			//trhottle
-			if (Input.GetKey(KeyCode.Joystick1Button2))
-				c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
-			else if (Input.GetKey(KeyCode.Joystick1Button1))
-				c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
-
-
-			//YAW
-			if (Input.GetKey(KeyCode.Joystick1Button4))
-				c.Yaw += 1 * Time.deltaTime;
-			else if (Input.GetKey(KeyCode.Joystick1Button3))
-				c.Yaw -= 1 * Time.deltaTime;
-			else
-				c.Yaw = Mathf.Lerp(c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
-
-			if (c.ClampValues)
-				c.Yaw = Mathf.Clamp(c.Yaw, -1, 1);
-			break;
-
-
-			//Mouse and key board (no default case)
-		case CT.KeyBoardAndMouse:
-			//coming son...
-
-
-
-			break;
-
-		default:
-			Debug.LogError("Wtf nigga??? (no control selected)");
-			break;
-
 		}
 		//Generals
-		c.Throttle = Mathf.Clamp(c.Throttle, 0, 10);
+		c.Throttle = Mathf.Clamp(c.Throttle, 1, 10);
 
 	}
 	//Control del motor y de mecanica extra c: 
@@ -312,7 +280,7 @@ public class PlayerController : MonoBehaviour {
 	}
 	void FixedUpdate() 
 	{
-		if (UseHelicopter) {
+		if (engineOn) {
 			InputControl (Control);
 		}
 		Hmotor();

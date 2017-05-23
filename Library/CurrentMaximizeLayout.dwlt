@@ -23,7 +23,7 @@ MonoBehaviour:
   m_MinSize: {x: 683, y: 342}
   m_MaxSize: {x: 12008, y: 8042}
   vertical: 0
-  controlID: 105
+  controlID: 1461
 --- !u!114 &2
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -123,7 +123,7 @@ MonoBehaviour:
   m_MinSize: {x: 406, y: 342}
   m_MaxSize: {x: 8006, y: 8042}
   vertical: 1
-  controlID: 72
+  controlID: 1462
 --- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -147,7 +147,7 @@ MonoBehaviour:
   m_MinSize: {x: 406, y: 221}
   m_MaxSize: {x: 8006, y: 4021}
   vertical: 0
-  controlID: 47
+  controlID: 1463
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -314,9 +314,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: -0.24064903, y: 0.45145383, z: -0.12786473, w: -0.8496638}
   m_Size:
-    m_Target: 5.395753
+    m_Target: 7.2469864
     speed: 2
-    m_Value: 5.395753
+    m_Value: 7.2469864
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -428,7 +428,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 82260000
     m_LastClickedID: 9858
-    m_ExpandedIDs: 00000000a4240000ce240000dc2400006625000088250000be250000d6250000ae260000
+    m_ExpandedIDs: 00000000a4240000ce240000dc2400006625000088250000be250000d6250000b2260000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -456,7 +456,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000a4240000ce240000dc2400006625000088250000be250000d6250000ae260000
+    m_ExpandedIDs: 00000000a4240000ce240000dc2400006625000088250000be250000d6250000b2260000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -555,8 +555,8 @@ MonoBehaviour:
     y: 0
     width: 417
     height: 735
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 277, y: 71}
+  m_MaxSize: {x: 4002, y: 4021}
   m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}
@@ -589,7 +589,7 @@ MonoBehaviour:
     y: 94
     width: 415
     height: 714
-  m_ScrollPosition: {x: 0, y: 528.9551}
+  m_ScrollPosition: {x: 0, y: 600.9551}
   m_InspectorMode: 0
   m_PreviewResizer:
     m_CachedPref: 160
