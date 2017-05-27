@@ -17,6 +17,9 @@
 
 using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
+
+
 public class PlayerController : MonoBehaviour {
 
 	//Definiciones de clases 
@@ -36,7 +39,6 @@ public class PlayerController : MonoBehaviour {
 		//Chasis and others
 		//public float ChasisDamage;
 		public GameObject Chasis;
-		public GameObject paDrone;
 	}
 	[System.Serializable]
 	public class HelicopterSettings
@@ -100,6 +102,7 @@ public class PlayerController : MonoBehaviour {
 	public HelicopterSettings Settings;
 	public HC Control;
 	private Stabilisation stabilisation;
+	private Text debugText;
 
 	//obtenemos todo el input necesairo
 	void InputControl(HC c) 
@@ -109,14 +112,26 @@ public class PlayerController : MonoBehaviour {
 		case CT.Keyboard:
 			// W AND S FOR THROTTLE, A & D FOR YAW , ARROWS FOR PITCH(up, down) and ROLL(right,left) 
 			//throttle 
+			Vector3 eulerAngles = transform.rotation.eulerAngles;
+			debugText.text = eulerAngles.ToString ();
 			if (Input.GetKey (KeyCode.W)) {
-				if (transform.rotation.x < Settings.maxAngle) { 
+				if (eulerAngles.x < Settings.maxAngle || eulerAngles.x > 180) { 
 					c.Pitch += 1 * Time.deltaTime;
+				} else {
+					float difference = Mathf.Abs (eulerAngles.x) - Mathf.Abs (Settings.maxAngle);
+					if (difference > 5.0f) {
+						c.Pitch -= Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
+					}
 				}
 				stabilisation.pitch = false;
 			} else if (Input.GetKey (KeyCode.S)) {
-				if (transform.rotation.x > -Settings.maxAngle) {
+				if (eulerAngles.x > (360 - Settings.maxAngle) || eulerAngles.x < 180) {
 					c.Pitch -= 1 * Time.deltaTime;
+				} else {
+					float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.x);
+					if (difference > 5.0f) {
+						c.Pitch += Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
+					}
 				}
 				stabilisation.pitch = false;
 			} else {
@@ -125,17 +140,23 @@ public class PlayerController : MonoBehaviour {
 			//pitch roll yaw control
 			//YAW
 			if (Input.GetKey (KeyCode.D)) {
-				if (transform.rotation.z > -Settings.maxAngle) {
+				if (eulerAngles.z > (360 - Settings.maxAngle) || eulerAngles.z < 180) {
 					c.Yaw -= 1 * Time.deltaTime;
 				} else {
-					c.Yaw = 0;
+					float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.z);
+					if (difference > 5.0f) {
+						c.Yaw += Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
+					}
 				}
 				stabilisation.yaw = false;
 			} else if (Input.GetKey (KeyCode.A)) {
-				if (transform.rotation.z < Settings.maxAngle) {
+				if (eulerAngles.z < Settings.maxAngle || eulerAngles.z > 180) {
 					c.Yaw += 1 * Time.deltaTime;
 				} else {
-					c.Yaw = 0;
+					float difference = Mathf.Abs (eulerAngles.z) - Mathf.Abs (Settings.maxAngle);
+					if (difference > 5.0f) {
+						c.Yaw -= Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
+					}
 				}
 				stabilisation.yaw = false;
 			} else {
@@ -185,25 +206,25 @@ public class PlayerController : MonoBehaviour {
 				Vector3 forward = transform.forward;
 				float difference = forwardDrifting.y;
 				if (difference < 0) {
-					c.Pitch += Mathf.Abs(difference) * 10.0f * Time.deltaTime;
+					c.Pitch += Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
 				} else if (difference > 0) {
-					c.Pitch -= Mathf.Abs(difference) * 10.0f * Time.deltaTime;
+					c.Pitch -= Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
 				}
 			}
 
 			if (stabilisation.yaw) {
 				float difference = sideDrifting.y;
 				if (difference < 0) {
-					c.Yaw -= Mathf.Abs (difference) * 10.0f * Time.deltaTime;
+					c.Yaw -= Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
 				} else if (difference > 0) {
-					c.Yaw += Mathf.Abs (difference) * 10.0f * Time.deltaTime;	
+					c.Yaw += Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;	
 				}
 			}
 			stabilisation.lastPos = transform.position;
 			break;
 		}
 		//Generals
-		c.Throttle = Mathf.Clamp(c.Throttle, 1, 10);
+		c.Throttle = Mathf.Clamp(c.Throttle, 3, 10);
 
 	}
 	//Control del motor y de mecanica extra c: 
@@ -277,6 +298,8 @@ public class PlayerController : MonoBehaviour {
 		Parts.Chasis.GetComponent<Rigidbody>().centerOfMass = Settings.CenterOfMass.localPosition;
 		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
+		debugText = GameObject.Find("Canvas/Debug").GetComponent<Text>();
+		debugText.text = "JONAS";
 	}
 	void FixedUpdate() 
 	{
