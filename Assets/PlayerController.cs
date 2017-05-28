@@ -103,129 +103,168 @@ public class PlayerController : MonoBehaviour {
 	public HC Control;
 	private Stabilisation stabilisation;
 	private Text debugText;
+	private bool landingMode;
+	private bool startingMode;
 
-	//obtenemos todo el input necesairo
+	float distanceToGround() {
+		RaycastHit hit = new RaycastHit();
+		float distance = 0.0f;
+		if (Physics.Raycast (transform.position, -Vector3.up, out hit)) {
+			distance = hit.distance;
+		}
+		return distance;
+	}
+
+	//get the input for the control
 	void InputControl(HC c) 
 	{
-		switch (c.ControlType) {
-		//KeyBoard Control
-		case CT.Keyboard:
-			// W AND S FOR THROTTLE, A & D FOR YAW , ARROWS FOR PITCH(up, down) and ROLL(right,left) 
-			//throttle 
-			Vector3 eulerAngles = transform.rotation.eulerAngles;
-			debugText.text = eulerAngles.ToString ();
-			if (Input.GetKey (KeyCode.W)) {
-				if (eulerAngles.x < Settings.maxAngle || eulerAngles.x > 180) { 
-					c.Pitch += 1 * Time.deltaTime;
-				} else {
-					float difference = Mathf.Abs (eulerAngles.x) - Mathf.Abs (Settings.maxAngle);
-					if (difference > 5.0f) {
-						c.Pitch -= Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
-					}
-				}
-				stabilisation.pitch = false;
-			} else if (Input.GetKey (KeyCode.S)) {
-				if (eulerAngles.x > (360 - Settings.maxAngle) || eulerAngles.x < 180) {
-					c.Pitch -= 1 * Time.deltaTime;
-				} else {
-					float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.x);
-					if (difference > 5.0f) {
-						c.Pitch += Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
-					}
-				}
-				stabilisation.pitch = false;
-			} else {
-				stabilisation.pitch = true;
-			}
-			//pitch roll yaw control
-			//YAW
-			if (Input.GetKey (KeyCode.D)) {
-				if (eulerAngles.z > (360 - Settings.maxAngle) || eulerAngles.z < 180) {
-					c.Yaw -= 1 * Time.deltaTime;
-				} else {
-					float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.z);
-					if (difference > 5.0f) {
-						c.Yaw += Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
-					}
-				}
-				stabilisation.yaw = false;
-			} else if (Input.GetKey (KeyCode.A)) {
-				if (eulerAngles.z < Settings.maxAngle || eulerAngles.z > 180) {
-					c.Yaw += 1 * Time.deltaTime;
-				} else {
-					float difference = Mathf.Abs (eulerAngles.z) - Mathf.Abs (Settings.maxAngle);
-					if (difference > 5.0f) {
-						c.Yaw -= Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
-					}
-				}
-				stabilisation.yaw = false;
-			} else {
-				c.Yaw = Mathf.Lerp (c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
-				stabilisation.yaw = true;
-			}
-			//Pitch
-			if (Input.GetKey (KeyCode.UpArrow)) {
-				c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
-				stabilisation.throttle = false;
-			} else if (Input.GetKey (KeyCode.DownArrow)) {
-				c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
-				stabilisation.throttle = false;
-			} else { 
-				c.Pitch = Mathf.Lerp (c.Pitch, 0, c.ReturnSpeed * Time.deltaTime);
-				stabilisation.throttle = true;
-			}
-				//Roll
-			if (Input.GetKey (KeyCode.RightArrow)) {
-				c.Roll += 1 * Time.deltaTime; 
-			} else if (Input.GetKey (KeyCode.LeftArrow)) {
-				c.Roll -= 1 * Time.deltaTime;
-			} else {
-				c.Roll = Mathf.Lerp (c.Roll, 0, c.ReturnSpeed * Time.deltaTime);
-			}
-			if (c.ClampValues) {
-				c.Roll = Mathf.Clamp (c.Roll, -1, 1);
-				c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
-				c.Yaw = Mathf.Clamp (c.Yaw, -1, 1);
-			}
+		// Up AND Down FOR THROTTLE, A & D FOR YAW , W AND S for PITCH right,left ROLL
+		//throttle 
+		Vector3 eulerAngles = transform.rotation.eulerAngles;
 
-
-
-			Vector3 driftingDirection = transform.position - stabilisation.lastPos;
-			Vector3 forwardDrifting = driftingDirection - transform.forward;
-			Vector3 sideDrifting = driftingDirection - transform.right;
-
-			if (stabilisation.throttle) {
-				float difference = (transform.position.y - stabilisation.lastPos.y);
-				if (difference < 0) {
-					c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
-				} else if (difference > 0) {
-					c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
-				}
-			}
-			if (stabilisation.pitch) {
-				Vector3 forward = transform.forward;
-				float difference = forwardDrifting.y;
-				if (difference < 0) {
-					c.Pitch += Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
-				} else if (difference > 0) {
-					c.Pitch -= Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
-				}
-			}
-
-			if (stabilisation.yaw) {
-				float difference = sideDrifting.y;
-				if (difference < 0) {
-					c.Yaw -= Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
-				} else if (difference > 0) {
-					c.Yaw += Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;	
-				}
-			}
-			stabilisation.lastPos = transform.position;
-			break;
+		float height = distanceToGround ();
+		debugText.text = eulerAngles.ToString () + ", "+ height +" og";
+		if (Input.GetKey (KeyCode.E) && height >= 1) {
+			landingMode = true;
 		}
-		//Generals
-		c.Throttle = Mathf.Clamp(c.Throttle, 3, 10);
+		if (landingMode) {
+			debugText.text += " landing mode"; 
+		}
+		if (Input.GetKey (KeyCode.W)) {
+			if (eulerAngles.x < Settings.maxAngle || eulerAngles.x > 180) { 
+				c.Pitch += 1 * Time.deltaTime;
+			} else {
+				float difference = Mathf.Abs (eulerAngles.x) - Mathf.Abs (Settings.maxAngle);
+				if (difference > 5.0f) {
+					c.Pitch -= Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
+				}
+			}
+			stabilisation.pitch = false;
+		} else if (Input.GetKey (KeyCode.S)) {
+			if (eulerAngles.x > (360 - Settings.maxAngle) || eulerAngles.x < 180) {
+				c.Pitch -= 1 * Time.deltaTime;
+			} else {
+				float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.x);
+				if (difference > 5.0f) {
+					c.Pitch += Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
+				}
+			}
+			stabilisation.pitch = false;
+		} else {
+			stabilisation.pitch = true;
+		}
+		//pitch roll yaw control
+		//YAW
+		if (Input.GetKey (KeyCode.D)) {
+			if (eulerAngles.z > (360 - Settings.maxAngle) || eulerAngles.z < 180) {
+				c.Yaw -= 1 * Time.deltaTime;
+			} else {
+				float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.z);
+				if (difference > 5.0f) {
+					c.Yaw += Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
+				}
+			}
+			stabilisation.yaw = false;
+		} else if (Input.GetKey (KeyCode.A)) {
+			if (eulerAngles.z < Settings.maxAngle || eulerAngles.z > 180) {
+				c.Yaw += 1 * Time.deltaTime;
+			} else {
+				float difference = Mathf.Abs (eulerAngles.z) - Mathf.Abs (Settings.maxAngle);
+				if (difference > 5.0f) {
+					c.Yaw -= Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
+				}
+			}
+			stabilisation.yaw = false;
+		} else {
+			c.Yaw = Mathf.Lerp (c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
+			stabilisation.yaw = true;
+		}
+		//Pitch
+		if (Input.GetKey (KeyCode.UpArrow)) {
+			c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
+			stabilisation.throttle = false;
+		} else if (Input.GetKey (KeyCode.DownArrow)) {
+			c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
+			stabilisation.throttle = false;
+		} else { 
+			c.Pitch = Mathf.Lerp (c.Pitch, 0, c.ReturnSpeed * Time.deltaTime);
+			stabilisation.throttle = true;
+		}
+			//Roll
+		if (Input.GetKey (KeyCode.RightArrow)) {
+			c.Roll += 1 * Time.deltaTime; 
+		} else if (Input.GetKey (KeyCode.LeftArrow)) {
+			c.Roll -= 1 * Time.deltaTime;
+		} else {
+			c.Roll = Mathf.Lerp (c.Roll, 0, c.ReturnSpeed * Time.deltaTime);
+		}
+		if (c.ClampValues) {
+			c.Roll = Mathf.Clamp (c.Roll, -1, 1);
+			c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
+			c.Yaw = Mathf.Clamp (c.Yaw, -1, 1);
+		}
+		if (landingMode) {
+			c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
 
+			stabilisation.throttle = false;
+			if (height < 0.6f) {
+				if (c.Throttle <= 0.0f) {
+					c.Throttle = 0.0f;
+					landingMode = false;
+					engineOn = false;
+				}
+			} else {
+				if (c.Throttle <= 2.5f) {
+					c.Throttle = 2.5f;
+				}
+			}
+		}
+		if (startingMode) {
+			c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
+			stabilisation.throttle = false;
+			if (height >= 2.0f) {
+				startingMode = false;
+			}
+		}
+
+		Vector3 driftingDirection = transform.position - stabilisation.lastPos;
+		Vector3 forwardDrifting = driftingDirection - transform.forward;
+		Vector3 sideDrifting = driftingDirection - transform.right;
+
+		if (stabilisation.throttle) {
+			float difference = (transform.position.y - stabilisation.lastPos.y);
+			if (difference < 0) {
+				c.Throttle += Settings.ThrotleSpeed * Time.deltaTime;
+			} else if (difference > 0) {
+				c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
+			}
+		}
+		if (stabilisation.pitch) {
+			Vector3 forward = transform.forward;
+			float difference = forwardDrifting.y;
+			if (difference < 0) {
+				c.Pitch += Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
+			} else if (difference > 0) {
+				c.Pitch -= Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
+			}
+		}
+
+		if (stabilisation.yaw) {
+			float difference = sideDrifting.y;
+			if (difference < 0) {
+				c.Yaw -= Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
+			} else if (difference > 0) {
+				c.Yaw += Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;	
+			}
+		}
+		stabilisation.lastPos = transform.position;
+
+		//Generals
+		if(!engineOn || startingMode || landingMode) {
+			c.Throttle = Mathf.Clamp (c.Throttle, 0, 10);
+		} else {
+			c.Throttle = Mathf.Clamp (c.Throttle, 3, 10);
+		}
 	}
 	//Control del motor y de mecanica extra c: 
 	void Hmotor() 
@@ -300,11 +339,18 @@ public class PlayerController : MonoBehaviour {
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
 		debugText = GameObject.Find("Canvas/Debug").GetComponent<Text>();
 		debugText.text = "JONAS";
+		landingMode = false;
 	}
 	void FixedUpdate() 
 	{
 		if (engineOn) {
 			InputControl (Control);
+		} else {
+			if (Input.GetKey (KeyCode.E)) {
+				engineOn = true;
+				landingMode = false;
+				startingMode = true;
+			}
 		}
 		Hmotor();
 	}

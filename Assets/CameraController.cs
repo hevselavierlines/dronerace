@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class DroneControl : MonoBehaviour {
+public class CameraController : MonoBehaviour {
 	public Camera firstPersonCamera;
 	public Camera thirdPersonCamera;
 	private Rigidbody rigid;
@@ -30,25 +30,12 @@ public class DroneControl : MonoBehaviour {
 	}
 
 	void ReadKeyboardButtons() {
-		if (Input.GetKeyDown(KeyCode.V)) {
+		if (Input.GetKeyDown(KeyCode.C)) {
 			if (firstPersonCamera.gameObject.active) {
 				ThirdPersonCamera ();
 			} else {
 				FirstPersonCamera ();	
 			}
 		}
-		if (Input.GetKey (KeyCode.UpArrow)) {
-			print ("up");
-			rigid.AddForce (0.0f, 2.0f, 0.0f);
-		} else if (Input.GetKey (KeyCode.DownArrow)) {
-			rigid.AddForce (0.0f, -1.0f, 0.0f);
-		} else if (Input.GetKey (KeyCode.W)) {
-			rigid.AddForce (1.0f, 0.0f, 0.0f);
-		} else if (Input.GetKey (KeyCode.S)) {
-			rigid.AddForce (-1.0f, 0.0f, 0.0f);
-		}
-
-		rigid.AddForce (0.0f, 8.5f, 0.0f);
-
 	}
 }
