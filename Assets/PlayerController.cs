@@ -1,18 +1,7 @@
 ﻿/// <summary>
-/// Saul Aceves Montes 29/12/2015
-/// Helicopter Script 1.0 
-/// 
-/// -LICENCIA (ZLIB)
-/// 
-/// Derechos de autor (c) <2015> <Saul Aceves>
-/// Este software se proporciona "tal cual", sin ninguna garantía expresa o implícita. En ningún caso los autores ser declarados responsables de los daños y perjuicios derivados de la utilización de este software.
-/// Se concede permiso para que cualquiera pueda utilizar este software para cualquier propósito, incluyendo aplicaciones comerciales, y para alterarlo y redistribuirlo libremente, sujeto a las siguientes restricciones:
-/// 1. El origen de este software no debe ser tergiversado; no hay que decir que usted escribió el software original. Si utiliza este software en un producto, un reconocimiento en la documentación del producto sería apreciada pero no se requiere.
-//  2. Las versiones alteradas de la fuente deben estar claramente identificados como tales, y no deben ser tergiversados ​​como el software original.
-//  3. Este aviso no puede ser suprimida o alterada de cualquier distribución de código fuente.
-/// 
-/// -Contacto
-/// 54ulxd@gmail.com 
+/// Manuel Baumgartner (c) 2017
+/// Using code from the helicopter script 1 of: Saul Aceves Montes 29/12/2015
+/// https://github.com/54UL/ArcadeHelicopterPhysics
 /// </summary>
 
 using UnityEngine;
@@ -22,17 +11,15 @@ using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
 
-	//Definiciones de clases 
+	//Definition of the helicopter parts.
 	[System.Serializable]
 	public class HelicopterParts 
 	{
-		//Helices
-		//Main
-		public Vector3 RotationAxisMainRotor;
-		public GameObject MainRotor;
-		//Tail
-		public Vector3 RotationAxisTailRotor;
-		public GameObject TailRotor;
+		//leftRotor
+		public Vector3 RotationAxisRotors;
+		public GameObject LeftRotor;
+		//rightRotor
+		public GameObject rightRotor;
 
 		public GameObject leftWing;
 		public GameObject rightWing;
@@ -56,10 +43,10 @@ public class PlayerController : MonoBehaviour {
 		public float maxAngle;
 	}
 	//Enum :v
-	public enum CT { Keyboard,JoyStick,KeyBoardAndMouse};
+	public enum CT { Keyboard,SmartPhone };
 	//Helicopter Control
 	[System.Serializable]
-	public class HC  
+	public class HelicopterControl 
 	{
 		public CT ControlType=CT.Keyboard;
 		// Control options
@@ -100,13 +87,13 @@ public class PlayerController : MonoBehaviour {
 	public HelicopterParts Parts;
 	public AudioH HelicopterSound;
 	public HelicopterSettings Settings;
-	public HC Control;
+	public HelicopterControl Control;
 	private Stabilisation stabilisation;
 	private Text debugText;
 	private bool landingMode;
 	private bool startingMode;
 
-	float distanceToGround() {
+	float getDistanceToGround() {
 		RaycastHit hit = new RaycastHit();
 		float distance = 0.0f;
 		if (Physics.Raycast (transform.position, -Vector3.up, out hit)) {
@@ -116,20 +103,23 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	//get the input for the control
-	void InputControl(HC c) 
+	void InputControl(HelicopterControl c) 
 	{
 		// Up AND Down FOR THROTTLE, A & D FOR YAW , W AND S for PITCH right,left ROLL
 		//throttle 
 		Vector3 eulerAngles = transform.rotation.eulerAngles;
 
-		float height = distanceToGround ();
-		debugText.text = eulerAngles.ToString () + ", "+ height +" og";
+		float height = getDistanceToGround ();
+		debugText.text = eulerAngles.ToString () + ", "+ height +" m";
 		if (Input.GetKey (KeyCode.E) && height >= 1) {
 			landingMode = true;
 		}
 		if (landingMode) {
-			debugText.text += " landing mode"; 
+			debugText.text += " LM active"; 
+		} else if (startingMode) {
+			debugText.text += " SM active";
 		}
+
 		if (Input.GetKey (KeyCode.W)) {
 			if (eulerAngles.x < Settings.maxAngle || eulerAngles.x > 180) { 
 				c.Pitch += 1 * Time.deltaTime;
@@ -190,7 +180,7 @@ public class PlayerController : MonoBehaviour {
 			c.Pitch = Mathf.Lerp (c.Pitch, 0, c.ReturnSpeed * Time.deltaTime);
 			stabilisation.throttle = true;
 		}
-			//Roll
+		//Roll
 		if (Input.GetKey (KeyCode.RightArrow)) {
 			c.Roll += 1 * Time.deltaTime; 
 		} else if (Input.GetKey (KeyCode.LeftArrow)) {
@@ -198,6 +188,7 @@ public class PlayerController : MonoBehaviour {
 		} else {
 			c.Roll = Mathf.Lerp (c.Roll, 0, c.ReturnSpeed * Time.deltaTime);
 		}
+
 		if (c.ClampValues) {
 			c.Roll = Mathf.Clamp (c.Roll, -1, 1);
 			c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
@@ -230,7 +221,7 @@ public class PlayerController : MonoBehaviour {
 		Vector3 driftingDirection = transform.position - stabilisation.lastPos;
 		Vector3 forwardDrifting = driftingDirection - transform.forward;
 		Vector3 sideDrifting = driftingDirection - transform.right;
-
+		//throttle (height) stabilisation
 		if (stabilisation.throttle) {
 			float difference = (transform.position.y - stabilisation.lastPos.y);
 			if (difference < 0) {
@@ -239,6 +230,7 @@ public class PlayerController : MonoBehaviour {
 				c.Throttle -= Settings.ThrotleSpeed * Time.deltaTime;
 			}
 		}
+		//Pitch (forward) stabilisation
 		if (stabilisation.pitch) {
 			Vector3 forward = transform.forward;
 			float difference = forwardDrifting.y;
@@ -248,7 +240,7 @@ public class PlayerController : MonoBehaviour {
 				c.Pitch -= Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
 			}
 		}
-
+		//Yaw (sideward) stabilisation
 		if (stabilisation.yaw) {
 			float difference = sideDrifting.y;
 			if (difference < 0) {
@@ -266,66 +258,35 @@ public class PlayerController : MonoBehaviour {
 			c.Throttle = Mathf.Clamp (c.Throttle, 3, 10);
 		}
 	}
-	//Control del motor y de mecanica extra c: 
-	void Hmotor() 
+
+	void EnginesControl() 
 	{
-		// MEJORAR LA MECANICA DEL MOTOR Y ANADIR COSAS NUEVAS C:
+		float currentPower = (Settings.MotorForce * Control.Throttle);    // es la potencia actual currentPower, no son horse power exactos si no es mi propia unidad de medida llamada horse power :v
+		float RotationPower = currentPower / (Settings.MotorForce * 10); // este es el porcentaje normalizado de la potencia del motor
 
-		//"Set the horse power", realmente esto no son caballos de fuerza... pero no encontre otro nombre cual ponerle
-		float HP = (Settings.MotorForce *Control.Throttle);    // es la potencia actual HP, no son horse power exactos si no es mi propia unidad de medida llamada horse power :v
-		float RotationPower = HP / (Settings.MotorForce * 10); // este es el porcentaje normalizado de la potencia del motor
-		// Debug.Log(HP);
+		//Rotation simulation
+		Parts.LeftRotor.transform.Rotate(Parts.RotationAxisRotors,Mathf.Lerp(0,currentPower,0.36f*Time.deltaTime));//Rotation
+		Parts.rightRotor.transform.Rotate(Parts.RotationAxisRotors,Mathf.Lerp(0,currentPower,0.36f*Time.deltaTime));
 
+		Parts.Chasis.GetComponent<Rigidbody> ().AddRelativeForce (Settings.MainForceDir * currentPower);
 
-		//-----------------------------------------------------------Main rotor
-		//aplicamos la fuerza sobre el chasis y verificamos los danos del rotor 
-		//if (Parts.MainRotor.GetComponent<RotorDamage>().CurrentDamage < 100)
-		{
-			//la parte del pitch, roll y el trhottle lo llevara el rotor principal
-			//Simulacion de la rotacion
-			Parts.MainRotor.transform.Rotate(Parts.RotationAxisMainRotor,Mathf.Lerp(0,HP,0.36f*Time.deltaTime));//Rotation
-			Parts.TailRotor.transform.Rotate(Parts.RotationAxisMainRotor,Mathf.Lerp(0,HP,0.36f*Time.deltaTime));
-			//damos la fuerza principal del helicoptero 
-			//Parts.Chasis.GetComponent<Rigidbody>().AddRelativeForce(Settings.MainForceDir* HP);
-			Parts.Chasis.GetComponent<Rigidbody> ().AddRelativeForce (Settings.MainForceDir * HP);
+		//TODO Main Sound of the helicopter
+		/*if (!HelicopterSound.AudioPoint.isPlaying) 
+			HelicopterSound.AudioPoint.PlayOneShot(HelicopterSound.IdleMotorSound);
 
-			//Main Sound
-			/*if (!HelicopterSound.AudioPoint.isPlaying) 
-				HelicopterSound.AudioPoint.PlayOneShot(HelicopterSound.IdleMotorSound);
+		HelicopterSound.AudioPoint.pitch = RotationPower*  HelicopterSound.PitchMultiplier + (Parts.Chasis.GetComponent<Rigidbody>().velocity.magnitude*0.014f);
+		HelicopterSound.AudioPoint.volume = RotationPower * HelicopterSound.VolumeMultiplier;
+		*/
+		//ENDTODO
 
-			HelicopterSound.AudioPoint.pitch = RotationPower*  HelicopterSound.PitchMultiplier + (Parts.Chasis.GetComponent<Rigidbody>().velocity.magnitude*0.014f);
-			HelicopterSound.AudioPoint.volume = RotationPower * HelicopterSound.VolumeMultiplier;
-			*/
-
-			//Asignamos la funcionalidad del rotor primario solamente si la potencia es del 20%
-			if (RotationPower > 0.2f) {
-				Parts.Chasis.transform.Rotate (new Vector3 ((Control.Pitch * RotationPower) * Settings.PitchForce, (Control.Roll * RotationPower) * Settings.RollForce, 0));
-			}
+		//The transformation in the direction only works if the current power is above 20 %.
+		if (RotationPower > 0.2f) {
+			Parts.Chasis.transform.Rotate (new Vector3 ((Control.Pitch * RotationPower) * Settings.PitchForce, (Control.Roll * RotationPower) * Settings.RollForce, 0));
 		}
-		//else //decuple part 
-		//{
-		//	Parts.MainRotor.transform.parent = null;
-		//	Parts.MainRotor.GetComponent<Rigidbody>().isKinematic = false;
-		//	Parts.Chasis.GetComponent<Rigidbody>().AddTorque(0, HP / .10f * Time.deltaTime, 0);
-		//}
 
-		//-------------------------------------------------------Tail Rotor
-		//if (Parts.TailRotor.GetComponent<RotorDamage>().CurrentDamage < 100)
-		{
-			// el rotor secundario es el YAW,
-			//Simulacion de la rotacion
-
-			//Parts.TailRotor.transform.Rotate(Parts.RotationAxisTailRotor, Mathf.Lerp(0, (HP / 0.5f),0.36f*Time.deltaTime));//Rotation
-			//Asignamos la funcionalidad del rotor secundario solamente si la potencia es del 10 % (puede variar este porcentaje pero no debe ser mayor al del principal)
-			if(RotationPower > 0.1f)
-				Parts.Chasis.transform.Rotate(0, 0, (Control.Yaw*RotationPower)*Settings.YawForce);
+		if (RotationPower > 0.2f) {
+			Parts.Chasis.transform.Rotate (0, 0, (Control.Yaw * RotationPower) * Settings.YawForce);
 		}
-		/*else //decuple part 
-		{
-			Parts.TailRotor.transform.parent = null;
-			Parts.TailRotor.GetComponent<Rigidbody>().isKinematic = false;
-			Parts.Chasis.GetComponent<Rigidbody>().AddTorque(0, HP / .30f * Time.deltaTime, 0);
-		}*/
 		//Debug.Log (Parts.Chasis.GetComponent<Rigidbody> ().velocity.magnitude);
 		Parts.leftWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.Yaw * 10.0f);
 		Parts.rightWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.Yaw * 10.0f);
@@ -338,7 +299,7 @@ public class PlayerController : MonoBehaviour {
 		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
 		debugText = GameObject.Find("Canvas/Debug").GetComponent<Text>();
-		debugText.text = "JONAS";
+		debugText.text = "";
 		landingMode = false;
 	}
 	void FixedUpdate() 
@@ -352,8 +313,7 @@ public class PlayerController : MonoBehaviour {
 				startingMode = true;
 			}
 		}
-		Hmotor();
+		EnginesControl();
 	}
-
 }
-
+	
