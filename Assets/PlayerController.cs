@@ -41,6 +41,7 @@ public class PlayerController : MonoBehaviour {
 		//RigidBody Settings
 		public Transform CenterOfMass;
 		public float maxAngle;
+		public int stabilisationWait;
 	}
 	//Enum :v
 	public enum CT { Keyboard,SmartPhone };
@@ -75,8 +76,8 @@ public class PlayerController : MonoBehaviour {
 	[System.Serializable]
 	public class Stabilisation 
 	{
-		public bool pitch;
-		public bool yaw;
+		public int pitch;
+		public int yaw;
 		public bool rotate;
 		public bool throttle;
 		public Vector3 lastPos;
@@ -92,6 +93,7 @@ public class PlayerController : MonoBehaviour {
 	private Text debugText;
 	private bool landingMode;
 	private bool startingMode;
+	private Rigidbody rigidBody;
 
 	float getDistanceToGround() {
 		RaycastHit hit = new RaycastHit();
@@ -111,6 +113,7 @@ public class PlayerController : MonoBehaviour {
 
 		float height = getDistanceToGround ();
 		debugText.text = eulerAngles.ToString () + ", "+ height +" m";
+		debugText.text += ", Speed: " + (rigidBody.velocity.magnitude * 3.6f) + " km/h";
 		if (Input.GetKey (KeyCode.E) && height >= 1) {
 			landingMode = true;
 		}
@@ -129,7 +132,7 @@ public class PlayerController : MonoBehaviour {
 					c.Pitch -= Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
 				}
 			}
-			stabilisation.pitch = false;
+			stabilisation.pitch = 0;
 		} else if (Input.GetKey (KeyCode.S)) {
 			if (eulerAngles.x > (360 - Settings.maxAngle) || eulerAngles.x < 180) {
 				c.Pitch -= 1 * Time.deltaTime;
@@ -139,9 +142,9 @@ public class PlayerController : MonoBehaviour {
 					c.Pitch += Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
 				}
 			}
-			stabilisation.pitch = false;
+			stabilisation.pitch = 0;
 		} else {
-			stabilisation.pitch = true;
+			stabilisation.pitch += 1;
 		}
 		//pitch roll yaw control
 		//YAW
@@ -154,7 +157,7 @@ public class PlayerController : MonoBehaviour {
 					c.Yaw += Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
 				}
 			}
-			stabilisation.yaw = false;
+			stabilisation.yaw = 0;
 		} else if (Input.GetKey (KeyCode.A)) {
 			if (eulerAngles.z < Settings.maxAngle || eulerAngles.z > 180) {
 				c.Yaw += 1 * Time.deltaTime;
@@ -164,10 +167,10 @@ public class PlayerController : MonoBehaviour {
 					c.Yaw -= Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
 				}
 			}
-			stabilisation.yaw = false;
+			stabilisation.yaw = 0;
 		} else {
 			c.Yaw = Mathf.Lerp (c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
-			stabilisation.yaw = true;
+			stabilisation.yaw += 1;
 		}
 		//Pitch
 		if (Input.GetKey (KeyCode.UpArrow)) {
@@ -217,6 +220,10 @@ public class PlayerController : MonoBehaviour {
 				startingMode = false;
 			}
 		}
+		if (Input.GetKey (KeyCode.N)) {
+			engineOn = false;
+			c.Throttle = 0f;
+		}
 
 		Vector3 driftingDirection = transform.position - stabilisation.lastPos;
 		Vector3 forwardDrifting = driftingDirection - transform.forward;
@@ -231,7 +238,7 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 		//Pitch (forward) stabilisation
-		if (stabilisation.pitch) {
+		if (stabilisation.pitch > Settings.stabilisationWait) {
 			Vector3 forward = transform.forward;
 			float difference = forwardDrifting.y;
 			if (difference < 0) {
@@ -241,7 +248,7 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 		//Yaw (sideward) stabilisation
-		if (stabilisation.yaw) {
+		if (stabilisation.yaw > Settings.stabilisationWait) {
 			float difference = sideDrifting.y;
 			if (difference < 0) {
 				c.Yaw -= Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
@@ -268,7 +275,7 @@ public class PlayerController : MonoBehaviour {
 		Parts.LeftRotor.transform.Rotate(Parts.RotationAxisRotors,Mathf.Lerp(0,currentPower,0.36f*Time.deltaTime));//Rotation
 		Parts.rightRotor.transform.Rotate(Parts.RotationAxisRotors,Mathf.Lerp(0,currentPower,0.36f*Time.deltaTime));
 
-		Parts.Chasis.GetComponent<Rigidbody> ().AddRelativeForce (Settings.MainForceDir * currentPower);
+		rigidBody.AddRelativeForce (Settings.MainForceDir * currentPower);
 
 		//TODO Main Sound of the helicopter
 		/*if (!HelicopterSound.AudioPoint.isPlaying) 
@@ -294,8 +301,9 @@ public class PlayerController : MonoBehaviour {
 	//Outpouts methods 
 	void Start() 
 	{
+		rigidBody = Parts.Chasis.GetComponent<Rigidbody> ();
 		//Set the center of mass
-		Parts.Chasis.GetComponent<Rigidbody>().centerOfMass = Settings.CenterOfMass.localPosition;
+		rigidBody.centerOfMass = Settings.CenterOfMass.localPosition;
 		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
 		debugText = GameObject.Find("Canvas/Debug").GetComponent<Text>();
