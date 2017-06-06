@@ -26,6 +26,7 @@ public class PlayerController : MonoBehaviour {
 		//Chasis and others
 		//public float ChasisDamage;
 		public GameObject Chasis;
+		public GameObject[] lights;
 	}
 	[System.Serializable]
 	public class HelicopterSettings
@@ -319,6 +320,13 @@ public class PlayerController : MonoBehaviour {
 				engineOn = true;
 				landingMode = false;
 				startingMode = true;
+			}
+
+			if (Input.GetKeyUp (KeyCode.L)) {
+				foreach(GameObject lightObject in Parts.lights) {
+					Light light = lightObject.GetComponent<Light> ();
+					light.enabled = !light.enabled;
+				}
 			}
 		}
 		EnginesControl();
