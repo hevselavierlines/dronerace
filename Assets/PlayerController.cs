@@ -113,16 +113,19 @@ public class PlayerController : MonoBehaviour {
 		Vector3 eulerAngles = transform.rotation.eulerAngles;
 
 		float height = getDistanceToGround ();
-		debugText.text = eulerAngles.ToString () + ", "+ height +" m";
-		debugText.text += ", Speed: " + (rigidBody.velocity.magnitude * 3.6f) + " km/h";
+		if (debugText != null) {
+			debugText.text = eulerAngles.ToString () + ", " + height + " m";
+			debugText.text += ", Speed: " + (rigidBody.velocity.magnitude * 3.6f) + " km/h";
+			if (landingMode) {
+				debugText.text += " LM active"; 
+			} else if (startingMode) {
+				debugText.text += " SM active";
+			}
+		}
 		if (Input.GetKey (KeyCode.E) && height >= 1) {
 			landingMode = true;
 		}
-		if (landingMode) {
-			debugText.text += " LM active"; 
-		} else if (startingMode) {
-			debugText.text += " SM active";
-		}
+
 
 		if (Input.GetKey (KeyCode.W)) {
 			if (eulerAngles.x < Settings.maxAngle || eulerAngles.x > 180) { 
@@ -308,7 +311,9 @@ public class PlayerController : MonoBehaviour {
 		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
 		debugText = GameObject.Find("Canvas/Debug").GetComponent<Text>();
-		debugText.text = "";
+		if (debugText != null) {
+			debugText.text = "";
+		}
 		landingMode = false;
 	}
 	void FixedUpdate() 
