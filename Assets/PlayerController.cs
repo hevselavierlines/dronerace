@@ -310,7 +310,7 @@ public class PlayerController : MonoBehaviour {
 		rigidBody.centerOfMass = Settings.CenterOfMass.localPosition;
 		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
-		debugText = GameObject.Find("Canvas/Debug").GetComponent<Text>();
+		debugText = GameObject.Find("Canvas/DebugText").GetComponent<Text>();
 		if (debugText != null) {
 			debugText.text = "";
 		}
