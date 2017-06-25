@@ -45,7 +45,7 @@ public class PlayerController : MonoBehaviour {
 		public float maxAngle;
 		public int stabilisationWait;
 	}
-	//Enum :v
+	//Controller enum. Smartphone control will be available later
 	public enum CT { Keyboard,SmartPhone };
 	//Helicopter Control
 	[System.Serializable]
@@ -344,6 +344,9 @@ public class PlayerController : MonoBehaviour {
 		}
 		//the engine control does the rigid body control.
 		EnginesControl();
+		if (Input.GetKey (KeyCode.Escape)) {
+			Application.Quit ();
+		}
 	}
 }
 	
