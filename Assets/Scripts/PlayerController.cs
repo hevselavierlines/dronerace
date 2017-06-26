@@ -9,7 +9,7 @@ using System.Collections;
 using UnityEngine.UI;
 
 /**
- * Controller for the drone rigidbody and the stabilisation.
+ * Contyawer for the drone rigidbody and the stabilisation.
  **/
 public class PlayerController : MonoBehaviour {
 
@@ -26,7 +26,6 @@ public class PlayerController : MonoBehaviour {
 		public GameObject leftWing;
 		public GameObject rightWing;
 		//Chasis and others
-		//public float ChasisDamage;
 		public GameObject Chasis;
 	}
 	[System.Serializable]
@@ -38,14 +37,14 @@ public class PlayerController : MonoBehaviour {
 		//Control force settings
 		public float ThrottleSpeed;//Speed multiplier (throttle)
 		public float PitchForce;
-		public float RollForce;
-		public float YawForce;
+		public float yawForce;
+		public float rollForce;
 		//RigidBody Settings
 		public Transform CenterOfMass;
 		public float maxAngle;
 		public int stabilisationWait;
 	}
-	//Controller enum. Smartphone control will be available later
+	//Contyawer enum. Smartphone control will be available later
 	public enum CT { Keyboard,SmartPhone };
 	//Helicopter Control
 	[System.Serializable]
@@ -55,9 +54,9 @@ public class PlayerController : MonoBehaviour {
 		// Control options
 		public float Throttle;// Force Multiplier
 		// Movement
-		public float Roll;
+		public float yaw;
 		public float Pitch;
-		public float Yaw;
+		public float roll;
 		[HideInInspector]
 		public float ReturnSpeed=1;
 		[HideInInspector]
@@ -77,7 +76,7 @@ public class PlayerController : MonoBehaviour {
 	public class Stabilisation 
 	{
 		public int pitch;
-		public int yaw;
+		public int roll;
 		public bool rotate;
 		public bool throttle;
 		public Vector3 lastPos;
@@ -96,6 +95,7 @@ public class PlayerController : MonoBehaviour {
 	public AudioSettings audioSettings;
 	private AudioSource audioSource;
 	private float height;
+	public GameObject windZone;
 
 	float getDistanceToGround() {
 		RaycastHit hit = new RaycastHit();
@@ -109,7 +109,7 @@ public class PlayerController : MonoBehaviour {
 	//get the input for the control
 	void InputControl(DroneControl c) 
 	{
-		// Up AND Down FOR THROTTLE, A & D FOR YAW , W AND S for PITCH right,left ROLL
+		// Up AND Down FOR THROTTLE, A & D FOR roll , W AND S for PITCH right,left yaw
 		//throttle 
 		Vector3 eulerAngles = transform.rotation.eulerAngles;
 
@@ -125,7 +125,7 @@ public class PlayerController : MonoBehaviour {
 			} else {
 				float difference = Mathf.Abs (eulerAngles.x) - Mathf.Abs (Settings.maxAngle);
 				if (difference > 5.0f) {
-					c.Pitch -= Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
+					c.Pitch -= (Mathf.Clamp (difference / (Control.Throttle * 0.09f), 0, 1) * Time.deltaTime);
 				}
 			}
 			stabilisation.pitch = 0;
@@ -136,7 +136,7 @@ public class PlayerController : MonoBehaviour {
 			} else {
 				float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.x);
 				if (difference > 5.0f) {
-					c.Pitch += Mathf.Clamp (difference, 0, 1) * Time.deltaTime;
+					c.Pitch += Mathf.Clamp (difference / (Control.Throttle * 0.09f), 0, 1) * Time.deltaTime;
 				}
 			}
 			stabilisation.pitch = 0;
@@ -144,33 +144,33 @@ public class PlayerController : MonoBehaviour {
 			//no button press means that stabilisation will be activated for pitch.
 			stabilisation.pitch += 1;
 		}
-		//YAW
-			//D sets the yaw to the right
+		//roll
+			//D sets the roll to the right
 		if (Input.GetKey (KeyCode.D)) {
 			if (eulerAngles.z > (360 - Settings.maxAngle) || eulerAngles.z < 180) {
-				c.Yaw -= 1 * Time.deltaTime;
+				c.roll -= 1 * Time.deltaTime;
 			} else {
 				float difference = Mathf.Abs (360 - Settings.maxAngle) - Mathf.Abs (eulerAngles.z);
 				if (difference > 5.0f) {
-					c.Yaw += Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
+					c.roll += Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
 				}
 			}
-			stabilisation.yaw = 0;
-			//A sets the yaw to the left
+			stabilisation.roll = 0;
+			//A sets the roll to the left
 		} else if (Input.GetKey (KeyCode.A)) {
 			if (eulerAngles.z < Settings.maxAngle || eulerAngles.z > 180) {
-				c.Yaw += 1 * Time.deltaTime;
+				c.roll += 1 * Time.deltaTime;
 			} else {
 				float difference = Mathf.Abs (eulerAngles.z) - Mathf.Abs (Settings.maxAngle);
 				if (difference > 5.0f) {
-					c.Yaw -= Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
+					c.roll -= Mathf.Clamp (difference, 0, 0.5f) * Time.deltaTime;
 				}
 			}
-			stabilisation.yaw = 0;
+			stabilisation.roll = 0;
 		} else {
-			//No A or D press activates the yaw stabilisation.
-			c.Yaw = Mathf.Lerp (c.Yaw, 0, c.ReturnSpeed * Time.deltaTime);
-			stabilisation.yaw += 1;
+			//No A or D press activates the roll stabilisation.
+			c.roll = Mathf.Lerp (c.roll, 0, c.ReturnSpeed * Time.deltaTime);
+			stabilisation.roll += 1;
 		}
 		//HEIGHT
 			//With increasing the throttle speed the drone is flying up.
@@ -185,21 +185,21 @@ public class PlayerController : MonoBehaviour {
 			c.Pitch = Mathf.Lerp (c.Pitch, 0, c.ReturnSpeed * Time.deltaTime);
 			stabilisation.throttle = true;
 		}
-		//ROLL
+		//yaw
 			//Rotating to right with right arrow
 		if (Input.GetKey (KeyCode.RightArrow)) {
-			c.Roll += 1 * Time.deltaTime; 
+			c.yaw += 1 * Time.deltaTime; 
 			//Rotating to left with left arrow
 		} else if (Input.GetKey (KeyCode.LeftArrow)) {
-			c.Roll -= 1 * Time.deltaTime;
+			c.yaw -= 1 * Time.deltaTime;
 		} else {
-			c.Roll = Mathf.Lerp (c.Roll, 0, c.ReturnSpeed * Time.deltaTime);
+			c.yaw = Mathf.Lerp (c.yaw, 0, c.ReturnSpeed * Time.deltaTime);
 		}
 		//All values must be between -1 and 1 for the control.
 		if (c.ClampValues) {
-			c.Roll = Mathf.Clamp (c.Roll, -1, 1);
+			c.yaw = Mathf.Clamp (c.yaw, -1, 1);
 			c.Pitch = Mathf.Clamp (c.Pitch, -1, 1);
-			c.Yaw = Mathf.Clamp (c.Yaw, -1, 1);
+			c.roll = Mathf.Clamp (c.roll, -1, 1);
 		}
 		//Landing mode reduces engine power (minimum 2.5).
 		if (landingMode) {
@@ -249,18 +249,18 @@ public class PlayerController : MonoBehaviour {
 			Vector3 forward = transform.forward;
 			float difference = forwardDrifting.y;
 			if (difference < 0) {
-				c.Pitch += Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
+				c.Pitch += (Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference)) / (Control.Throttle * 0.4f) * Time.deltaTime;
 			} else if (difference > 0) {
-				c.Pitch -= Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
+				c.Pitch -= (Mathf.Abs(difference) * 10.0f * Mathf.Abs(difference)) / (Control.Throttle * 0.4f) * Time.deltaTime;
 			}
 		}
-		//Yaw (sideward) stabilisation
-		if (stabilisation.yaw > Settings.stabilisationWait) {
+		//roll (sideward) stabilisation
+		if (stabilisation.roll > Settings.stabilisationWait) {
 			float difference = sideDrifting.y;
 			if (difference < 0) {
-				c.Yaw -= Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;
+				c.roll -= (Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference)) / (Control.Throttle * 0.5f) * Time.deltaTime;
 			} else if (difference > 0) {
-				c.Yaw += Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference) * Time.deltaTime;	
+				c.roll += (Mathf.Abs (difference) * 10.0f * Mathf.Abs(difference)) / (Control.Throttle * 0.5f) * Time.deltaTime;	
 			}
 		}
 		stabilisation.lastPos = transform.position;
@@ -295,16 +295,19 @@ public class PlayerController : MonoBehaviour {
 
 		//The transformation in the direction only works if the current power is above 20 %.
 		if (RotationPower > 0.2f) {
-			Parts.Chasis.transform.Rotate (new Vector3 ((Control.Pitch * RotationPower) * Settings.PitchForce, (Control.Roll * RotationPower) * Settings.RollForce, 0));
+			Parts.Chasis.transform.Rotate (new Vector3 ((Control.Pitch * RotationPower) * Settings.PitchForce, (Control.yaw * RotationPower) * Settings.yawForce, 0));
 		}
 
 		if (RotationPower > 0.2f) {
-			Parts.Chasis.transform.Rotate (0, 0, (Control.Yaw * RotationPower) * Settings.YawForce);
+			Parts.Chasis.transform.Rotate (0, 0, (Control.roll * RotationPower) * Settings.rollForce);
 		}
 		//Debug.Log (Parts.Chasis.GetComponent<Rigidbody> ().velocity.magnitude);
 		//Local rotation for the wings (holder of the rotors).
-		Parts.leftWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.Yaw * 10.0f);
-		Parts.rightWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.Yaw * 10.0f);
+		if (engineOn) {
+			Parts.leftWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.roll * 10.0f);
+			Parts.rightWing.transform.localEulerAngles = new Vector3 (Control.Pitch * 10.0f, 0, Control.roll * 10.0f);
+		}
+
 	}
 	//Outpouts methods 
 	void Start() 
@@ -312,6 +315,7 @@ public class PlayerController : MonoBehaviour {
 		rigidBody = Parts.Chasis.GetComponent<Rigidbody> ();
 		//Set the center of mass
 		rigidBody.centerOfMass = Settings.CenterOfMass.localPosition;
+
 		stabilisation = new Stabilisation ();
 		//HelicopterSound.AudioPoint.clip = HelicopterSound.IdleMotorSound;
 		debugText = GameObject.Find("Canvas/DebugText").GetComponent<Text>();
@@ -328,11 +332,14 @@ public class PlayerController : MonoBehaviour {
 		} else {
 			//E button or up arrow starts the engine
 			if (Input.GetKey (KeyCode.E) || (!engineOn && Input.GetKey(KeyCode.UpArrow))) {
+				Control.Pitch = 0.0f;
+				Control.roll = 0.0f;
 				engineOn = true;
 				landingMode = false;
 				startingMode = true;
 			}
 		}
+
 		//the engine control does the rigid body control.
 		EnginesControl();
 		if (Input.GetKey (KeyCode.Escape)) {
