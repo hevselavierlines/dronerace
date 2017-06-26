@@ -66,10 +66,8 @@ public class PlayerController : MonoBehaviour {
 
 	//Audio
 	[System.Serializable]
-	public class AudioH
+	public class AudioSettings
 	{
-		public AudioSource AudioPoint;
-		public AudioClip IdleMotorSound;
 		public float PitchMultiplier;
 		public float VolumeMultiplier;
 
@@ -88,7 +86,6 @@ public class PlayerController : MonoBehaviour {
 	//Variables y instancias de clases
 	public bool engineOn;// Control Enabled For the helicopter ??
 	public DroneParts Parts;
-	public AudioH HelicopterSound;
 	public DroneSettings Settings;
 	public DroneControl Control;
 	private Stabilisation stabilisation;
@@ -96,6 +93,9 @@ public class PlayerController : MonoBehaviour {
 	private bool landingMode;
 	private bool startingMode;
 	private Rigidbody rigidBody;
+	public AudioSettings audioSettings;
+	private AudioSource audioSource;
+	private float height;
 
 	float getDistanceToGround() {
 		RaycastHit hit = new RaycastHit();
@@ -113,16 +113,7 @@ public class PlayerController : MonoBehaviour {
 		//throttle 
 		Vector3 eulerAngles = transform.rotation.eulerAngles;
 
-		float height = getDistanceToGround ();
-		if (debugText != null) {
-			debugText.text = eulerAngles.ToString () + ", " + height + " m";
-			debugText.text += ", Speed: " + (rigidBody.velocity.magnitude * 3.6f) + " km/h";
-			if (landingMode) {
-				debugText.text += " LM active"; 
-			} else if (startingMode) {
-				debugText.text += " SM active";
-			}
-		}
+		height = getDistanceToGround ();
 		if ((Input.GetKey (KeyCode.E) || Input.GetKey (KeyCode.L)) && height >= 1) {
 			landingMode = true;
 		}
@@ -295,12 +286,11 @@ public class PlayerController : MonoBehaviour {
 		rigidBody.AddRelativeForce (Settings.MainForceDir * currentPower); //Adding the relative force to the rigid body.
 
 		//TODO Main Sound of the helicopter
-		/*if (!HelicopterSound.AudioPoint.isPlaying) 
-			HelicopterSound.AudioPoint.PlayOneShot(HelicopterSound.IdleMotorSound);
+		//if (!HelicopterSound.AudioPoint.isPlaying) 
+		//	HelicopterSound.AudioPoint.PlayOneShot(HelicopterSound.IdleMotorSound);
+		audioSource.pitch = RotationPower * audioSettings.PitchMultiplier + (Parts.Chasis.GetComponent<Rigidbody>().velocity.magnitude*0.02f);
+		audioSource.volume = RotationPower * audioSettings.VolumeMultiplier;
 
-		HelicopterSound.AudioPoint.pitch = RotationPower*  HelicopterSound.PitchMultiplier + (Parts.Chasis.GetComponent<Rigidbody>().velocity.magnitude*0.014f);
-		HelicopterSound.AudioPoint.volume = RotationPower * HelicopterSound.VolumeMultiplier;
-		*/
 		//ENDTODO
 
 		//The transformation in the direction only works if the current power is above 20 %.
@@ -329,6 +319,7 @@ public class PlayerController : MonoBehaviour {
 			debugText.text = "";
 		}
 		landingMode = false;
+		audioSource = GetComponent<AudioSource> ();
 	}
 	void FixedUpdate() 
 	{
@@ -346,6 +337,20 @@ public class PlayerController : MonoBehaviour {
 		EnginesControl();
 		if (Input.GetKey (KeyCode.Escape)) {
 			Application.Quit ();
+		}
+
+		PrintText ();
+	}
+
+	void PrintText() {
+		if (debugText != null) {
+			debugText.text = height.ToString("F3") + " m\t";
+			debugText.text += (rigidBody.velocity.magnitude * 3.6f).ToString("F1") + " km/h";
+			if (landingMode) {
+				debugText.text += "\nLanding"; 
+			} else if (startingMode) {
+				debugText.text += "\nStarting";
+			}
 		}
 	}
 }
